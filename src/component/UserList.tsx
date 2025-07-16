@@ -1,4 +1,8 @@
-import React from 'react';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Table, Typography } from "antd";
+
+const { Title } = Typography;
 
 interface User {
   id: number;
@@ -7,32 +11,48 @@ interface User {
 }
 
 const UserList: React.FC = () => {
-  const users: User[] = [
-    { id: 1, name: 'Nguyễn Văn A', email: 'a@gmail.com' },
-    { id: 2, name: 'Trần Thị B', email: 'b@gmail.com' },
+  const fetchUsers = async (): Promise<User[]> => {
+    const res = await fetch("http://localhost:3001/users");
+    if (!res.ok) throw new Error("Failed to fetch users");
+    return res.json();
+  };
+
+  const { data = [], isLoading, isError, error } = useQuery<User[]>({
+    queryKey: ["users"],
+    queryFn: fetchUsers,
+  });
+
+  const columns = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+    },
+    {
+      title: "Tên",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+    },
   ];
 
   return (
     <div>
-      <h2>Danh sách người dùng</h2>
-      <table className="table table-bordered">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tên</th>
-            <th>Email</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(user => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Title level={3}>Danh sách người dùng</Title>
+
+      {isError && <p style={{ color: "red" }}>{(error as Error).message}</p>}
+
+      <Table
+        dataSource={data}
+        columns={columns}
+        rowKey="id"
+        loading={isLoading}
+        pagination={{ pageSize: 5 }}
+      />
     </div>
   );
 };

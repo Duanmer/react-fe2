@@ -1,4 +1,8 @@
-import React from 'react';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Table, Typography } from "antd";
+
+const { Title } = Typography;
 
 interface Brand {
   id: number;
@@ -6,30 +10,43 @@ interface Brand {
 }
 
 const BrandList: React.FC = () => {
-  const brands: Brand[] = [
-    { id: 1, name: 'Nike' },
-    { id: 2, name: 'Adidas' },
+  const fetchBrands = async (): Promise<Brand[]> => {
+    const res = await fetch("http://localhost:3001/brands");
+    if (!res.ok) throw new Error("Failed to fetch brands");
+    return res.json();
+  };
+
+  const { data = [], isLoading, isError, error } = useQuery<Brand[]>({
+    queryKey: ["brands"],
+    queryFn: fetchBrands,
+  });
+
+  const columns = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+    },
+    {
+      title: "Tên thương hiệu",
+      dataIndex: "name",
+      key: "name",
+    },
   ];
 
   return (
     <div>
-      <h2>Danh sách thương hiệu</h2>
-      <table className="table table-bordered">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tên thương hiệu</th>
-          </tr>
-        </thead>
-        <tbody>
-          {brands.map(brand => (
-            <tr key={brand.id}>
-              <td>{brand.id}</td>
-              <td>{brand.name}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Title level={3}>Danh sách thương hiệu</Title>
+
+      {isError && <p style={{ color: "red" }}>{(error as Error).message}</p>}
+
+      <Table
+        dataSource={data}
+        columns={columns}
+        rowKey="id"
+        loading={isLoading}
+        pagination={{ pageSize: 5 }}
+      />
     </div>
   );
 };

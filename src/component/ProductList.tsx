@@ -1,60 +1,69 @@
 import { useQuery } from "@tanstack/react-query";
-import { Image, Spin, Table } from "antd";
+import { Image, Table, Typography } from "antd";
+
+const { Title } = Typography;
 
 interface Product {
   id: string;
   name: string;
   price: number;
+  image: string;
+  description: string;
 }
+
 function ProductList() {
-  const fetchProducts = async () => {
+  const fetchProducts = async (): Promise<Product[]> => {
     const res = await fetch("http://localhost:3001/products");
+    if (!res.ok) throw new Error("Failed to fetch products");
     return res.json();
   };
-  // state data, isLoading, error
-  const { data, isLoading, error } = useQuery({
+
+  const { data = [], isLoading, error } = useQuery<Product[]>({
     queryKey: ["products"],
     queryFn: fetchProducts,
   });
-  console.log(data, isLoading, error);
+
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
     },
     {
-      title: "Name",
+      title: "Tên sản phẩm",
       dataIndex: "name",
     },
     {
-      title: "Price",
+      title: "Giá",
       dataIndex: "price",
       sorter: (a: Product, b: Product) => a.price - b.price,
+      render: (price: number) => `${price.toLocaleString("vi-VN")} ₫`,
     },
     {
-      title: "Image",
+      title: "Hình ảnh",
       dataIndex: "image",
-      render: (src: string, recourd: Product, index: number) => {
-        return <Image src={src} width={300} alt={recourd.name} />;
-      },
+      render: (src: string, record: Product) => (
+  src ? <Image src={src} width={120} alt={record.name} /> : "Không có ảnh"
+),
+
     },
     {
-      title: "Description",
+      title: "Mô tả",
+      dataIndex: "description",
     },
   ];
+
   return (
     <div>
-      {/* {isLoading && <Spin />} */}
-      {error && <p>Error: {error.message}</p>}
-      {/* {data?.map((item: Product) => (
-        <p key={item.id}>{item.name}</p>
-      ))} */}
+      <Title level={3}>Danh sách sản phẩm</Title>
+
+      {error && <p style={{ color: "red" }}>{(error as Error).message}</p>}
+
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={"id"}
-        loading={isLoading} // Hiển thị spinner khi đang tải
-        pagination={{ pageSize: 5 }} // Phân trang, mỗi trang 5 bản ghi
+        rowKey="id"
+        loading={isLoading}
+        pagination={{ pageSize: 5 }}
       />
     </div>
   );

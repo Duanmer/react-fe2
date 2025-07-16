@@ -1,4 +1,8 @@
-import React from 'react';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Table, Typography } from "antd";
+
+const { Title } = Typography;
 
 interface Order {
   id: number;
@@ -8,34 +12,54 @@ interface Order {
 }
 
 const OrderList: React.FC = () => {
-  const orders: Order[] = [
-    { id: 101, customer: 'Nguyễn Văn A', total: 1200000, status: 'Đã giao' },
-    { id: 102, customer: 'Trần Thị B', total: 950000, status: 'Đang xử lý' },
+  const fetchOrders = async (): Promise<Order[]> => {
+    const res = await fetch("http://localhost:3001/orders");
+    if (!res.ok) throw new Error("Failed to fetch orders");
+    return res.json();
+  };
+
+  const { data = [], isLoading, isError, error } = useQuery<Order[]>({
+    queryKey: ["orders"],
+    queryFn: fetchOrders,
+  });
+
+  const columns = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+    },
+    {
+      title: "Khách hàng",
+      dataIndex: "customer",
+      key: "customer",
+    },
+    {
+      title: "Tổng tiền",
+      dataIndex: "total",
+      key: "total",
+      render: (value: number) => `${value.toLocaleString("vi-VN")} ₫`,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+    },
   ];
 
   return (
     <div>
-      <h2>Danh sách đơn hàng</h2>
-      <table className="table table-bordered">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Khách hàng</th>
-            <th>Tổng tiền</th>
-            <th>Trạng thái</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map(order => (
-            <tr key={order.id}>
-              <td>{order.id}</td>
-              <td>{order.customer}</td>
-              <td>{order.total.toLocaleString('vi-VN')} ₫</td>
-              <td>{order.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Title level={3}>Danh sách đơn hàng</Title>
+
+      {isError && <p style={{ color: "red" }}>{(error as Error).message}</p>}
+
+      <Table
+        dataSource={data}
+        columns={columns}
+        rowKey="id"
+        loading={isLoading}
+        pagination={{ pageSize: 5 }}
+      />
     </div>
   );
 };
